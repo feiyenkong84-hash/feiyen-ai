@@ -26,8 +26,21 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Test collector
+        run: python -m unittest discover -s tests -v
+
       - name: Collect public leads
+        id: collect
+        continue-on-error: true
         run: python collect_leads.py
+
+      - name: Upload collection report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: collection-report
+          path: collection-report.json
+          if-no-files-found: warn
 
       - name: Save collected leads
         run: |
@@ -40,3 +53,9 @@ jobs:
             git commit -m "Update collected study leads"
             git push
           fi
+
+      - name: Report collection failure
+        if: always() && steps.collect.outcome != 'success'
+        run: |
+          echo "One or more sources failed. Inspect collection-report artifact; zero additions is not proof of success."
+          exit 1
