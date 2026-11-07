@@ -1,4 +1,4 @@
-
+ 
 import json
 import re
 import urllib.request
@@ -12,19 +12,18 @@ OUTPUT = Path("leads.json")
 
 SOURCES = [
     {
-        "name": "OurSteps 小学教育",
-        "url": "https://www.oursteps.com.au/bbs/forum.php?mod=rss&fid=101",
+        "name": "Reddit InternationalSchools",
+        "url": "https://www.reddit.com/r/Internationalteachers/new/.rss",
     },
     {
-        "name": "OurSteps 子女教育",
-        "url": "https://www.oursteps.com.au/bbs/forum.php?mod=rss&fid=163",
+        "name": "Reddit StudyAbroad",
+        "url": "https://www.reddit.com/r/studyAbroad/new/.rss",
     },
     {
-        "name": "OurSteps 大学教育",
-        "url": "https://www.oursteps.com.au/bbs/forum.php?mod=rss&fid=165",
+        "name": "Reddit Malaysia",
+        "url": "https://www.reddit.com/r/malaysia/new/.rss",
     },
 ]
-
 COUNTRIES = [
     "马来西亚", "新加坡", "malaysia", "singapore"
 ]
