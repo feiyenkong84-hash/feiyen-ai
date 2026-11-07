@@ -1,0 +1,23 @@
+
+name: StudyLead Radar Daily
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  daily-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check scheduled workflow
+        run: |
+          echo "StudyLead Radar daily workflow started"
+          date -u
+          echo "Workflow test completed"
