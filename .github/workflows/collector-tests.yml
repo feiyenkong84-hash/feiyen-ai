@@ -1,0 +1,66 @@
+name: Collector tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [fix/studylead-collector-status]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: collector-tests-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    name: RSS, Atom, deduplication and failure tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run collector tests
+        run: python -m unittest discover -s tests -v
+
+  failure-contract:
+    name: Verify failed collection is a failed Actions step
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Collect from local rate-limited HTTP server (expected failure)
+        id: collect
+        continue-on-error: true
+        run: python tests/probe_http429.py --output "$RUNNER_TEMP/probe-leads.json" --report "$RUNNER_TEMP/probe-report.json"
+      - name: Verify Actions observed the failure and report
+        if: always()
+        env:
+          COLLECT_OUTCOME: ${{ steps.collect.outcome }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          assert os.environ['COLLECT_OUTCOME'] == 'failure', 'Actions did not mark collection failed'
+          directory = Path(os.environ['RUNNER_TEMP'])
+          report = json.loads((directory / 'probe-report.json').read_text())
+          assert report['status'] == 'failed'
+          assert report['added'] == 0
+          assert report['sources'][0]['status'] == 'failed'
+          assert '429' in report['sources'][0]['error']
+          assert not (directory / 'probe-leads.json').exists()
+          print('PASS: HTTP 429 produced a failed Actions step and explicit failure report')
+          PY
+      - name: Upload expected-failure report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: http429-failure-report
+          path: ${{ runner.temp }}/probe-report.json
+          if-no-files-found: error
